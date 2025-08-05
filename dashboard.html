@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Portfolio Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Hello, Shaurya 👋</h1>
+    <p>Here's your portfolio overview</p>
+  </header>
+
+  <section class="cards">
+    <div class="card"><h3>Total Value</h3><p id="total-value">--</p></div>
+    <div class="card"><h3>Total Invested</h3><p id="invested">--</p></div>
+    <div class="card"><h3>Returns</h3><p id="returns">--</p></div>
+    <div class="card"><h3>Assets</h3><p id="assets">--</p></div>
+  </section>
+
+  <section class="overview-section">
+    <div class="chart-container">
+      <h2 style="text-align: left;">Asset Allocation</h2>
+      <canvas id="assetChart" width="500" height="350"></canvas>
+    </div>
+
+    <div class="line-chart-section">
+      <div class="chart-container">
+        <h2 style="text-align: left;">Profit & Loss</h2>
+        <canvas id="lineChart" width="500
+        " height="350"></canvas>
+      </div>
+
+      <div class="profit-tables">
+        <div class="profit-box" height = "150">
+          <h3>📈 Most Profitable</h3>
+          <ul id="most-profitable">
+            
+          </ul>
+        </div>
+        <div class="loss-box" height = "150">
+          <h3>📉 Least Profitable</h3>
+          <ul id="least-profitable">
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="table-container">
+      <h2>Holdings</h2>
+      <table>
+        <thead>
+          <tr><th>Asset</th><th>Type</th><th>Units</th><th>Invested</th><th>Current</th><th>Gain/Loss</th></tr>
+        </thead>
+        <tbody id="holdings-body">
+          
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="transactions">
+    <h2>Recent Transactions</h2>
+    <ul>
+      <li>28 July – Bought 0.01 BTC @ ₹2,00,000</li>
+      <li>27 July – Sold 5 TCS @ ₹3,600</li>
+    </ul>
+  </section>
+
+  
+  <!-- Buy/Sell Modal -->
+<div class="modal fade" id="tradeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Trade Stock</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="stockName"></p>
+        <div class="mb-3">
+          <label>Action</label>
+          <select id="tradeAction" class="form-select">
+            <option>Buy</option>
+            <option>Sell</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label>Quantity</label>
+          <input type="number" id="tradeQty" class="form-control" min="1" value="1">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="submitTrade" class="btn btn-primary">Submit</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>

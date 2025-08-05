@@ -1,0 +1,62 @@
+{
+  "user": {
+    "totalValue": 250000,
+    "totalInvested": 200000,
+    "returns": 50000,
+    "assets": 12
+  },
+  "assetAllocation": [
+    { "label": "Stocks", "percentage": 30 },
+    { "label": "Mutual Funds", "percentage": 10 },
+    { "label": "FDs", "percentage": 10 },
+    { "label": "Crypto", "percentage": 50 }
+  ],
+  "performanceOverTime": [
+    { "month": "Apr", "value": 10000 },
+    { "month": "May", "value": 20000 },
+    { "month": "Jun", "value": 30000 }
+  ],
+  "holdings": [
+    {
+      "asset": "TCS",
+      "type": "Stocks",
+      "invested": 10000,
+      "current": 12000,
+      "gainLoss": 2000,
+      "units": 20
+    },
+    {
+      "asset": "BTC",
+      "type": "Crypto",
+      "invested": 50000,
+      "current": 48000,
+      "gainLoss": -2000,
+      "units": 0.8
+    },
+    {
+      "asset": "HDFC MF",
+      "type": "Mutual Funds",
+      "invested": 30000,
+      "current": 38000,
+      "gainLoss": 8000,
+      "units": 30
+    },
+    {
+      "asset": "SBI FD",
+      "type": "FDs",
+      "invested": 20000,
+      "current": 22000,
+      "gainLoss": 2000,
+      "units": 1
+    }
+  ],
+  "profitStats": {
+    "topProfit": [
+      { "asset": "HDFC MF", "gain": 8000 },
+      { "asset": "TCS", "gain": 2000 }
+    ],
+    "topLoss": [
+      { "asset": "BTC", "loss": -2000 }
+    ]
+  }
+}

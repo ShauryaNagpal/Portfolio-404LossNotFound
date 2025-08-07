@@ -1,0 +1,64 @@
+<link rel="stylesheet" href="styles.css">
+<div id="header">
+    <h1 id="heading">Add investments</h1>
+</div>
+<div class="form-section">
+    <h2>Add New Investment</h2>
+    <form id="investmentForm">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="symbol">Symbol:</label>
+                <select name="symbol" id="symbol" >
+                    <option value="TCS">TCS</option>
+                        <option value="RELIANCE">RELIANCE</option>
+                    <option value="INFY">INFY</option>
+                    <option value="HDFC">HDFC</option>
+                    <option value="ITC">ITC</option>
+                    <option value="KOTAKBANK">KOTAK BANK</option>
+                    <option value="LT">LT</option>
+                    <option value="AXISBANK">AXIS BANK</option>
+                    <option value="SBIN">SBIN</option>
+                    <option value="BHARTIARTL">BHARTIARTL</option>
+                    <option value="MARUTI">MARUTI</option>
+                    <option value="ASIANPAINT">ASIAN PAINTS</option>
+                    <option value="TATAMOTORS">TATA MOTORS</option>
+                    <option value="WIPRO">WIPRO</option>
+                    <option value="ULTRACEMCO">ULTRACEMCO</option>
+                    <option value="SUNPHARMA">SUN PHARMA</option>
+                    <option value="POWERGRID">POWER GRID</option>
+                    <option value="NESTEIND">NESTLEIND</option>
+                    <option value="TITAN">TITAN</option>
+                    <option value="TECHM">TECHM</option>
+                </select>
+                <input type="text" id
+                ="symbol" placeholder="e.g., RELIANCE, TCS" required>
+            </div>
+            <div class="form-group">
+                <label for="name">Company Name:</label>
+                <input type="text" id="name" placeholder="e.g., Reliance Industries" required>
+            </div>
+            <div class="form-group">
+                <label for="type">Type:</label>
+                <select id="type" required>
+                    <option value="">Select Type</option>
+                    <option value="stock">Stock</option>
+                    <option value="bond">Bond</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="quantity">Quantity:</label>
+                <input type="number" id="quantity" min="1" required>
+            </div>
+            <div class="form-group">
+                <label for="purchasePrice">Purchase Price (₹):</label>
+                <input type="number" id="purchasePrice" step="0.01" min="0.01" required>
+                <small id="priceHint" style="color: #666; font-size: 12px; margin-top: 5px;"></small>
+            </div>
+            <div class="form-group">
+                <button type="submit">Add Investment</button>
+            </div>
+        </div>
+    </form>
+</div>

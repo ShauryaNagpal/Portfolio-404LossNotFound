@@ -5,7 +5,7 @@ const axios = require('axios');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = 3002;
 
 // Middleware
 app.use(cors());
@@ -483,7 +483,7 @@ function generateRandomTime() {
   return times[Math.floor(Math.random() * times.length)];
 }
 
-// Get portfolio summary
+// Get portfolio summary with proper stock/bond logic
 app.get('/api/portfolio/summary', async (req, res) => {
   try {
     db.all('SELECT * FROM portfolio', async (err, portfolio) => {
@@ -500,8 +500,39 @@ app.get('/api/portfolio/summary', async (req, res) => {
         const invested = item.quantity * item.purchase_price;
         totalInvested += invested;
 
-        // Get current price (simplified for demo)
-        const currentPrice = item.purchase_price * (0.95 + Math.random() * 0.1); // Simulate price movement
+        let currentPrice;
+        let priceCalculationMethod;
+
+        // Different pricing logic for stocks vs bonds
+        if (item.type === 'stock') {
+          // Stock pricing: market-based with volatility
+          const basePrice = INDIAN_STOCK_PRICES[item.symbol];
+          if (basePrice) {
+            const variation = (Math.random() - 0.5) * 0.08; // ±4% daily variation for stocks
+            currentPrice = basePrice * (1 + variation);
+            priceCalculationMethod = 'market_price';
+          } else {
+            // Fallback for unknown stocks
+            const marketMovement = (Math.random() - 0.45) * 0.1; // Slight upward bias
+            currentPrice = item.purchase_price * (1 + marketMovement);
+            priceCalculationMethod = 'estimated_price';
+          }
+        } else if (item.type === 'bond') {
+          // Bond pricing: more stable, yield-based
+          const baseBondPrice = INDIAN_BOND_PRICES[item.symbol];
+          if (baseBondPrice) {
+            // Bonds have much lower volatility (±1%)
+            const variation = (Math.random() - 0.5) * 0.02; // ±1% variation for bonds
+            currentPrice = baseBondPrice * (1 + variation);
+            priceCalculationMethod = 'bond_market_price';
+          } else {
+            // Bond pricing tends to be more stable
+            const bondMovement = (Math.random() - 0.48) * 0.03; // Very slight movement
+            currentPrice = item.purchase_price * (1 + bondMovement);
+            priceCalculationMethod = 'bond_estimated_price';
+          }
+        }
+
         const currentItemValue = item.quantity * currentPrice;
         currentValue += currentItemValue;
 
@@ -510,7 +541,8 @@ app.get('/api/portfolio/summary', async (req, res) => {
           current_price: currentPrice,
           current_value: currentItemValue,
           gain_loss: currentItemValue - invested,
-          gain_loss_percentage: ((currentItemValue - invested) / invested) * 100
+          gain_loss_percentage: ((currentItemValue - invested) / invested) * 100,
+          price_method: priceCalculationMethod
         });
       }
 
@@ -519,7 +551,7 @@ app.get('/api/portfolio/summary', async (req, res) => {
         current_value: currentValue,
         total_gain_loss: currentValue - totalInvested,
         total_gain_loss_percentage: totalInvested > 0 ? ((currentValue - totalInvested) / totalInvested) * 100 : 0,
-        holdings
+        holdings: holdings.sort((a, b) => b.current_value - a.current_value) // Sort by value descending
       });
     });
   } catch (error) {

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About Us - 404 Loss Not Found</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+          overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+        
+      body {
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        color: #1f1f1f;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+  
+      header {
+        background-color: #000000;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 2rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      }
+  
+      .logo {
+        font-size: 1.6rem;
+        font-weight: 600;
+        padding-left: 2rem;
+      }
+  
+      nav {
+        padding-right: 2rem;
+      }
+  
+      nav a {
+        margin-left: 1.5rem;
+        text-decoration: none;
+        color: #ffffffcc;
+        font-weight: 500;
+        transition: color 0.3s ease;
+      }
+  
+      nav a:hover {
+        color: #ffffff;
+      }
+  
+      main {
+          height: 100vh; /* fills the screen */
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          padding: 2rem;
+          position: relative;
+        }
+        
+  
+      .dashboard-button {
+        margin-top: 2rem;
+        padding: 1rem 2rem;
+        background: #1032b9;
+        color: #fff;
+        border: none;
+        border-radius: 30px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(25, 1, 142, 0.3);
+        transition: background 0.3s ease, box-shadow 0.3s ease;
+      }
+  
+      .dashboard-button:hover {
+        background: #0c0596;
+        box-shadow: 0 6px 16px rgba(5, 150, 105, 0.4);
+      }
+  
+      .info-section {
+        margin-top: 4rem;
+        max-width: 700px;
+        font-size: 1.1rem;
+        color: #374151;
+      }
+  
+      footer {
+        background-color: #000000;
+        color: #ffffff;
+        padding: 1rem 2rem;
+        text-align: center;
+        font-size: 0.9rem;
+        border-top: 1px solid #e5e7eb;
+      }
+  
+      /* Decorative background blob */
+      body::before {
+        content: '';
+        position: absolute;
+        top: -80px;
+        left: -100px;
+        width: 300px;
+        height: 300px;
+        background: #2a33b2;
+        opacity: 0.1;
+        border-radius: 50%;
+        z-index: -1;
+      }
+  
+      body::after {
+        content: '';
+        position: absolute;
+        bottom: -100px;
+        right: -100px;
+        width: 400px;
+        height: 400px;
+        background: #3348ea;
+        opacity: 0.1;
+        border-radius: 50%;
+        z-index: -1;
+      }
+  
+          /* ... keep existing styles above this point ... */
+        
+          header {
+            background-color: #000000;
+            color: white;
+            
+            padding: 1rem 2rem;
+          
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+          }
+          .header-left {
+              display: flex;
+              align-items: center;
+              gap: 3rem;
+            }
+        
+          .logo {
+            font-size: 1.6rem;
+            font-weight: 600;
+            white-space: nowrap;
+          }
+        
+          nav {
+            display: flex;
+            gap: 1.5rem;
+          }
+        
+          nav a {
+            text-decoration: none;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 1.05rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: background 0.3s ease, color 0.3s ease;
+          }
+        
+          nav a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+          }
+          .overview-section {
+              padding: 4rem 2rem;
+              background: #ffffff;
+              text-align: center;
+              max-width: 900px;
+              margin: 0 auto;
+            }
+          
+            .overview-section h2 {
+              font-size: 2rem;
+              margin-bottom: 1rem;
+              color: #1f1f1f;
+            }
+          
+            .overview-section p {
+              font-size: 1.1rem;
+              color: #374151;
+              line-height: 1.6;
+              max-width: 700px;
+              margin: 0 auto;
+            }
+            .user-avatar img {
+              width: 36px;
+              height: 36px;
+              border-radius: 50%;
+              border: 2px solid #ffffff33;
+              cursor: pointer;
+              transition: transform 0.3s ease;
+            }
+            
+            .user-avatar img:hover {
+              transform: scale(1.1);
+            }
+    /* Include all your existing styles here – copy-paste the full CSS from your main file */
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <div class="logo">📈 Portfolio Pro</div>
+      <nav>
+        <a href="home.html">Home</a>
+        <a href="about.html">About Us</a>
+        <a href="faqs.html">FAQs</a>
+      </nav>
+    </div>
+    <div class="user-avatar">
+      <img src="https://i.pravatar.cc/32" alt="User Avatar" />
+    </div>
+  </header>
+
+  <main class="overview-section">
+    <h2>Meet the Team</h2>
+    <p>This Portfolio Management System was built through collaboration between:</p>
+    <ul style="list-style: none; padding: 2rem 0; font-size: 1.1rem;">
+      <li>👤 Shaurya Nagpal</li>
+      <li>👤 Arihant Agrawal</li>
+      <li>👤 Rasika Vivek Jahagirdar</li>
+    </ul>
+    <p>We worked together to create a platform that helps users manage investments easily and efficiently, making finance accessible for everyone.</p>
+  </main>
+
+  <footer>
+    &copy; 2025 404-LossNotFound. All rights reserved.
+  </footer>
+</body>
+</html>

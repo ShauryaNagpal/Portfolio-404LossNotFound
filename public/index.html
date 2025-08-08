@@ -1,855 +1,1602 @@
-<script>
-    let allocationChart = null;
-    let typeChart = null;
-    let stockChart = null;
-    let bondChart = null;
-
-    // API Base URL
-    const API_BASE = '';
-
-    // Initialize the app
-    document.addEventListener('DOMContentLoaded', function() {
-        loadDashboard();
-        loadWallet();
-        loadNews();
-        setupForm();
-        initializeCharts();
-    });
-
-    // Load wallet balance
-    async function loadWallet() {
-        try {
-            const response = await fetch(`${API_BASE}/api/wallet`);
-            const data = await response.json();
-            document.getElementById('walletBalance').textContent = `₹${formatNumber(data.balance)}`;
-        } catch (error) {
-            console.error('Error loading wallet:', error);
-        }
-    }
-
-    // Show add money modal
-    function showAddMoneyModal() {
-        document.getElementById('addMoneyModal').style.display = 'block';
-    }
-
-    // Close add money modal
-    function closeAddMoneyModal() {
-        document.getElementById('addMoneyModal').style.display = 'none';
-        document.getElementById('addAmount').value = '';
-    }
-
-    // Add money to wallet
-    async function addMoney() {
-        const amount = parseFloat(document.getElementById('addAmount').value);
-        
-        if (!amount || amount <= 0) {
-            alert('Please enter a valid amount');
-            return;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Pro - Investment Management</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        try {
-            const response = await fetch(`${API_BASE}/api/wallet/add`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ amount: amount })
-            });
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
 
-            const result = await response.json();
-            
-            if (response.ok) {
-                alert(`₹${formatNumber(amount)} added successfully!`);
-                closeAddMoneyModal();
-                loadWallet();
-            } else {
-                alert('Error: ' + result.error);
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Modern Header */
+        .header {
+            background: rgba(12, 11, 11, 0.884);
+            backdrop-filter: blur(20px);
+            padding: 1rem 0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f3f3f5, #fdfcfd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .wallet-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .balance-display {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .add-money-btn {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .add-money-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(17, 153, 142, 0.3);
+        }
+
+        /* Navigation */
+        .nav-container {
+            margin: 2rem 0;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 0.5rem;
+            overflow-x: auto;
+        }
+
+        .nav-tab {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 1rem 2rem;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            min-width: 120px;
+        }
+
+        .nav-tab.active {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 2rem;
+        }
+
+        /* Dashboard Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .metric-title {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-change {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .positive {
+            color: #11998e;
+        }
+
+        .negative {
+            color: #e74c3c;
+        }
+
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        /* Investment Form */
+        .investment-form {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: #333;
+        }
+
+        .type-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .type-option {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.5);
+            border: 2px solid transparent;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .type-option.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .type-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-input,
+        .form-select {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 0.75rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .price-hint {
+            color: #11998e;
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Portfolio Table */
+        .portfolio-table {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .pagination-info {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .holdings-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .holdings-table th {
+            background: rgba(102, 126, 234, 0.1);
+            color: #333;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .holdings-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            vertical-align: middle;
+        }
+
+        .holdings-table tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .asset-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .asset-symbol {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #333;
+        }
+
+        .asset-name {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .asset-type {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .asset-type.stock {
+            background: rgba(17, 153, 142, 0.1);
+            color: #11998e;
+        }
+
+        .asset-type.bond {
+            background: rgba(255, 193, 7, 0.2);
+            color: #f39c12;
+        }
+
+        .btn-sell {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-sell:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        /* Pagination */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .pagination-btn {
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* News Grid */
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .news-item {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .news-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .news-headline {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .news-summary {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .news-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+        }
+
+        .news-source {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .news-time {
+            color: #999;
+        }
+
+        .news-category {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            margin: 10% auto;
+            padding: 2rem;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        /* Loading States */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ddd;
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
             }
-        } catch (error) {
-            alert('Error adding money: ' + error.message);
-        }
-    }
 
-    // Load news
-    async function loadNews() {
-        try {
-            const response = await fetch(`${API_BASE}/api/news`);
-            const news = await response.json();
-            
-            const newsContainer = document.getElementById('newsContainer');
-            
-            if (news.length === 0) {
-                newsContainer.innerHTML = '<div class="loading">No news available</div>';
-                return;
+            .nav-tabs {
+                flex-wrap: wrap;
             }
 
-            const newsHTML = news.map(item => `
-                <div class="news-item">
-                    <div class="news-headline">${item.headline}</div>
-                    <div class="news-summary">${item.summary}</div>
-                    <div class="news-meta">
-                        <span>${item.source}</span>
-                        <span>${item.time}</span>
-                        <span class="news-category">${item.category}</span>
+            .nav-tab {
+                min-width: auto;
+                flex: 1;
+                padding: 0.75rem 1rem;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .holdings-table {
+                font-size: 0.8rem;
+            }
+
+            .holdings-table th,
+            .holdings-table td {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">📈 Portfolio Pro</div>
+                <div class="wallet-section">
+                    <div class="balance-display" id="walletBalance">₹100,000</div>
+                    <button class="add-money-btn" onclick="showAddMoneyModal()">+ Add Money</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <div class="container">
+        <div class="nav-container">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+                <button class="nav-tab" onclick="switchTab('invest')">💰 Invest</button>
+                <button class="nav-tab" onclick="switchTab('portfolio')">📋 Portfolio</button>
+                <button class="nav-tab" onclick="switchTab('analytics')">📈 Analytics</button>
+                <button class="nav-tab" onclick="switchTab('news')">📰 News</button>
+            </div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">Total Invested</div>
+                    <div class="metric-value" id="totalInvested">₹0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Current Value</div>
+                    <div class="metric-value" id="currentValue">₹0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Total P&L</div>
+                    <div class="metric-value" id="totalGainLoss">₹0</div>
+                    <div class="metric-change" id="totalReturn">0%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Active Holdings</div>
+                    <div class="metric-value" id="activePositions">0</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">Portfolio Allocation</div>
+                    <canvas id="allocationChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Asset Type Distribution</div>
+                    <canvas id="typeChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invest Tab -->
+        <div id="invest" class="tab-content">
+            <div class="investment-form">
+                <div class="form-title">Make New Investment</div>
+                
+                <div class="type-selector">
+                    <div class="type-option selected" data-type="stock">
+                        <div class="type-icon">📈</div>
+                        <div style="font-weight: 600;">Stocks</div>
+                        <div style="font-size: 0.9rem; color: #666;">Equity investments</div>
+                    </div>
+                    <div class="type-option" data-type="bond">
+                        <div class="type-icon">🏦</div>
+                        <div style="font-weight: 600;">Bonds</div>
+                        <div style="font-size: 0.9rem; color: #666;">Fixed income securities</div>
                     </div>
                 </div>
-            `).join('');
-            
-            newsContainer.innerHTML = newsHTML;
-        } catch (error) {
-            console.error('Error loading news:', error);
-            document.getElementById('newsContainer').innerHTML = 
-                '<div class="loading">Error loading news</div>';
-        }
-    }
 
-    // Get price suggestion when symbol changes
-    async function onSymbolChange() {
-        const symbol = document.getElementById('symbol').value.toUpperCase();
-        const priceInput = document.getElementById('purchasePrice');
-        const priceHint = document.getElementById('priceHint');
+                <form id="investmentForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Select Asset:</label>
+                            <select class="form-select" id="assetSelect" required>
+                                <option value="">Choose an asset...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Quantity:</label>
+                            <input type="number" class="form-input" id="quantity" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Price per Unit (₹):</label>
+                            <input type="number" class="form-input" id="purchasePrice" step="0.01" min="0.01" required>
+                            <div class="price-hint" id="priceHint"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Total Investment:</label>
+                            <input type="text" class="form-input" id="totalCost" readonly style="background: rgba(102, 126, 234, 0.1);">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">🚀 Invest Now</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Portfolio Tab -->
+        <div id="portfolio" class="tab-content">
+            <div class="portfolio-table">
+                <div class="table-header">
+                    <div class="table-title">Your Holdings</div>
+                    <div class="pagination-info" id="paginationInfo">-</div>
+                </div>
+                <div id="holdingsContainer">
+                    <div class="loading">Loading your portfolio...</div>
+                </div>
+                <div class="pagination-container" id="paginationContainer" style="display: none;">
+                    <button class="pagination-btn" id="prevBtn" onclick="changePage(-1)">← Previous</button>
+                    <span class="page-info" id="pageInfo">Page 1</span>
+                    <button class="pagination-btn" id="nextBtn" onclick="changePage(1)">Next →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">Stock Holdings</div>
+                    <canvas id="stockChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Bond Holdings</div>
+                    <canvas id="bondChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Performance Trend</div>
+                    <canvas id="performanceChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Sector Distribution</div>
+                    <canvas id="sectorChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- News Tab -->
+        <div id="news" class="tab-content">
+            <div class="card">
+                <div class="chart-title" style="margin-bottom: 2rem;">Latest Market News</div>
+                <div id="newsContainer">
+                    <div class="loading">Loading latest news...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Money Modal -->
+    <div id="addMoneyModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeAddMoneyModal()">&times;</button>
+            <div class="modal-title">Add Money to Wallet</div>
+            <div class="form-group">
+                <label class="form-label">Amount (₹):</label>
+                <input type="number" class="form-input" id="addAmount" min="1" step="0.01" placeholder="Enter amount">
+            </div>
+            <button onclick="addMoney()" class="btn-primary">Add Money</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let charts = {};
+        let currentInvestmentType = 'stock';
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let totalItems = 0;
+        let allHoldings = [];
         
-        if (symbol.length < 2) {
-            priceHint.textContent = '';
-            return;
+        // Stock and Bond data with realistic Indian market prices
+        const STOCKS_DATA = {
+            'RELIANCE': { name: 'Reliance Industries Ltd', price: 2485.50, sector: 'Energy & Petrochemicals' },
+            'TCS': { name: 'Tata Consultancy Services', price: 3890.25, sector: 'Information Technology' },
+            'INFY': { name: 'Infosys Limited', price: 1654.80, sector: 'Information Technology' },
+            'HDFCBANK': { name: 'HDFC Bank Limited', price: 1598.75, sector: 'Banking & Financial Services' },
+            'ITC': { name: 'ITC Limited', price: 456.30, sector: 'FMCG & Consumer Goods' },
+            'KOTAKBANK': { name: 'Kotak Mahindra Bank', price: 1789.40, sector: 'Banking & Financial Services' },
+            'LT': { name: 'Larsen & Toubro', price: 3421.60, sector: 'Engineering & Construction' },
+            'AXISBANK': { name: 'Axis Bank Limited', price: 1156.85, sector: 'Banking & Financial Services' },
+            'SBIN': { name: 'State Bank of India', price: 598.20, sector: 'Banking & Financial Services' },
+            'BHARTIARTL': { name: 'Bharti Airtel Limited', price: 1189.95, sector: 'Telecommunications' },
+            'MARUTI': { name: 'Maruti Suzuki India', price: 10845.30, sector: 'Automobile & Auto Components' },
+            'ASIANPAINT': { name: 'Asian Paints Limited', price: 3256.70, sector: 'Consumer Durables' },
+            'TATAMOTORS': { name: 'Tata Motors Limited', price: 789.45, sector: 'Automobile & Auto Components' },
+            'WIPRO': { name: 'Wipro Limited', price: 587.25, sector: 'Information Technology' },
+            'SUNPHARMA': { name: 'Sun Pharmaceutical', price: 1234.60, sector: 'Pharmaceuticals' },
+            'TITAN': { name: 'Titan Company Limited', price: 3142.35, sector: 'Consumer Durables' },
+            'TECHM': { name: 'Tech Mahindra Limited', price: 1567.90, sector: 'Information Technology' },
+            'ULTRACEMCO': { name: 'UltraTech Cement Limited', price: 8956.40, sector: 'Cement & Construction Materials' },
+            'NESTLEIND': { name: 'Nestle India Limited', price: 24567.80, sector: 'FMCG & Consumer Goods' },
+            'POWERGRID': { name: 'Power Grid Corporation', price: 289.75, sector: 'Power & Utilities' }
+        };
+
+        const BONDS_DATA = {
+            'NHAI-2031': { name: 'NHAI Bond 2031', price: 1015.50, yield: 7.25, maturity: '2031-03-15', rating: 'AAA' },
+            'IRFC-2030': { name: 'IRFC Bond 2030', price: 1008.25, yield: 6.95, maturity: '2030-12-20', rating: 'AAA' },
+            'HUDCO-2029': { name: 'HUDCO Bond 2029', price: 1012.80, yield: 7.10, maturity: '2029-08-10', rating: 'AA+' },
+            'PFC-2032': { name: 'PFC Bond 2032', price: 1018.75, yield: 7.35, maturity: '2032-06-25', rating: 'AAA' },
+            'REC-2031': { name: 'REC Bond 2031', price: 1009.30, yield: 7.05, maturity: '2031-11-30', rating: 'AAA' },
+            'NTPC-2030': { name: 'NTPC Bond 2030', price: 1014.40, yield: 6.85, maturity: '2030-09-15', rating: 'AAA' },
+            'PGCIL-2029': { name: 'PGCIL Bond 2029', price: 1007.60, yield: 6.90, maturity: '2029-04-20', rating: 'AAA' },
+            'IIFCL-2028': { name: 'IIFCL Bond 2028', price: 1011.85, yield: 6.75, maturity: '2028-12-05', rating: 'AA+' }
+        };
+
+        const API_BASE = '';
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            loadWallet();
+            loadDashboard();
+            loadNews();
+            setupInvestmentForm();
+            initializeCharts();
+            populateAssetDropdown();
         }
 
-        try {
-            const response = await fetch(`${API_BASE}/api/suggest-price/${symbol}`);
-            const data = await response.json();
+        // Tab switching
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.nav-tab').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
             
-            if (data.suggested_price) {
-                priceHint.textContent = `💡 Current market price: ₹${data.suggested_price}`;
-                priceInput.placeholder = data.suggested_price;
-            } else {
-                priceHint.textContent = '';
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+
+            // Load specific data for tabs
+            if (tabName === 'analytics') {
+                setTimeout(() => initializeAnalyticsCharts(), 100);
+            } else if (tabName === 'portfolio') {
+                currentPage = 1;
+                loadDashboard();
             }
-        } catch (error) {
-            priceHint.textContent = '';
         }
-    }
 
-    // Setup form submission
-    function setupForm() {
-        // Add symbol change listener
-        document.getElementById('symbol').addEventListener('input', onSymbolChange);
-        
-        document.getElementById('investmentForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = {
-                symbol: document.getElementById('symbol').value.toUpperCase(),
-                name: document.getElementById('name').value,
-                type: document.getElementById('type').value,
-                quantity: parseInt(document.getElementById('quantity').value),
-                purchase_price: parseFloat(document.getElementById('purchasePrice').value)
-            };
+        // Investment type selection
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.type-option')) {
+                const option = e.target.closest('.type-option');
+                document.querySelectorAll('.type-option').forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                currentInvestmentType = option.dataset.type;
+                populateAssetDropdown();
+            }
+        });
 
-            // Calculate total cost
-            const totalCost = formData.quantity * formData.purchase_price;
+        function populateAssetDropdown() {
+            const select = document.getElementById('assetSelect');
+            select.innerHTML = '<option value="">Choose an asset...</option>';
             
-            if (!confirm(`This will cost ₹${formatNumber(totalCost)}. Continue?`)) {
+            const data = currentInvestmentType === 'stock' ? STOCKS_DATA : BONDS_DATA;
+            
+            Object.entries(data).forEach(([symbol, info]) => {
+                const option = document.createElement('option');
+                option.value = symbol;
+                option.textContent = `${symbol} - ${info.name}`;
+                select.appendChild(option);
+            });
+        }
+
+        function setupInvestmentForm() {
+            const assetSelect = document.getElementById('assetSelect');
+            const quantityInput = document.getElementById('quantity');
+            const priceInput = document.getElementById('purchasePrice');
+            const totalCostInput = document.getElementById('totalCost');
+            const priceHint = document.getElementById('priceHint');
+
+            // Asset selection change
+            assetSelect.addEventListener('change', function() {
+                const symbol = this.value;
+                if (symbol) {
+                    const data = currentInvestmentType === 'stock' ? STOCKS_DATA : BONDS_DATA;
+                    const assetData = data[symbol];
+                    if (assetData) {
+                        const variation = (Math.random() - 0.5) * 0.05; // ±2.5% variation
+                        const currentPrice = assetData.price * (1 + variation);
+                        priceInput.value = currentPrice.toFixed(2);
+
+                        if (currentInvestmentType === 'stock') {
+                            priceHint.textContent = `💡 Market Price: ₹${currentPrice.toFixed(2)} | Sector: ${assetData.sector}`;
+                        } else {
+                            priceHint.textContent = `💡 Face Value: ₹${currentPrice.toFixed(2)} | Yield: ${assetData.yield}% | Rating: ${assetData.rating}`;
+                        }
+
+                        updateTotalCost();
+                    }
+                }
+            });
+
+            // Update total cost calculation
+            [quantityInput, priceInput].forEach(input => {
+                input.addEventListener('input', updateTotalCost);
+            });
+
+            function updateTotalCost() {
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const total = quantity * price;
+                totalCostInput.value = total > 0 ? `₹${formatNumber(total)}` : '';
+            }
+
+            // Form submission
+            document.getElementById('investmentForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const symbol = assetSelect.value;
+                const data = currentInvestmentType === 'stock' ? STOCKS_DATA : BONDS_DATA;
+                const assetData = data[symbol];
+                
+                const formData = {
+                    symbol: symbol,
+                    name: assetData.name,
+                    type: currentInvestmentType,
+                    quantity: parseInt(quantityInput.value),
+                    purchase_price: parseFloat(priceInput.value)
+                };
+
+                const totalCost = formData.quantity * formData.purchase_price;
+                
+                if (!confirm(`Confirm Investment?\n\n${formData.name}\nType: ${currentInvestmentType.toUpperCase()}\nQuantity: ${formData.quantity}\nPrice: ₹${formData.purchase_price}\nTotal: ₹${formatNumber(totalCost)}`)) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_BASE}/api/portfolio`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert(`🎉 Investment Successful!\n\nRemaining Balance: ₹${formatNumber(result.remaining_balance)}`);
+                        document.getElementById('investmentForm').reset();
+                        populateAssetDropdown();
+                        loadDashboard();
+                        loadWallet();
+                        switchTab('portfolio');
+                    } else {
+                        alert('❌ ' + result.error);
+                    }
+                } catch (error) {
+                    alert('❌ Error: ' + error.message);
+                }
+            });
+        }
+
+        // Wallet functions
+        async function loadWallet() {
+            try {
+                const response = await fetch(`${API_BASE}/api/wallet`);
+                const data = await response.json();
+                document.getElementById('walletBalance').textContent = `₹${formatNumber(data.balance)}`;
+            } catch (error) {
+                console.error('Error loading wallet:', error);
+            }
+        }
+
+        function showAddMoneyModal() {
+            document.getElementById('addMoneyModal').style.display = 'block';
+        }
+
+        function closeAddMoneyModal() {
+            document.getElementById('addMoneyModal').style.display = 'none';
+            document.getElementById('addAmount').value = '';
+        }
+
+        async function addMoney() {
+            const amount = parseFloat(document.getElementById('addAmount').value);
+            
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
                 return;
             }
 
             try {
-                const response = await fetch(`${API_BASE}/api/portfolio`, {
+                const response = await fetch(`${API_BASE}/api/wallet/add`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: amount })
                 });
 
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(`Investment added successfully! Remaining balance: ₹${formatNumber(result.remaining_balance)}`);
-                    document.getElementById('investmentForm').reset();
+                    alert(`💰 ₹${formatNumber(amount)} added successfully!`);
+                    closeAddMoneyModal();
+                    loadWallet();
+                } else {
+                    alert('❌ ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        // Dashboard functions
+        async function loadDashboard() {
+            try {
+                const response = await fetch(`${API_BASE}/api/portfolio/summary`);
+                const data = await response.json();
+
+                // Update metrics
+                document.getElementById('totalInvested').textContent = `₹${formatNumber(data.total_invested)}`;
+                document.getElementById('currentValue').textContent = `₹${formatNumber(data.current_value)}`;
+                document.getElementById('activePositions').textContent = data.holdings.length;
+                
+                const gainLossElement = document.getElementById('totalGainLoss');
+                const returnElement = document.getElementById('totalReturn');
+                
+                gainLossElement.textContent = `₹${formatNumber(data.total_gain_loss)}`;
+                returnElement.textContent = `${data.total_gain_loss_percentage.toFixed(2)}%`;
+                
+                const isPositive = data.total_gain_loss >= 0;
+                gainLossElement.className = `metric-value ${isPositive ? 'positive' : 'negative'}`;
+                returnElement.className = `metric-change ${isPositive ? 'positive' : 'negative'}`;
+
+                // Store all holdings for pagination
+                allHoldings = data.holdings;
+                totalItems = allHoldings.length;
+
+                // Update portfolio table with pagination
+                updatePortfolioTable();
+                
+                // Update charts
+                updateDashboardCharts(data.holdings);
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                // Show mock data if API fails
+                showMockData();
+            }
+        }
+
+        function showMockData() {
+            // Mock data for demonstration
+            const mockHoldings = [
+                {
+                    id: 1, symbol: 'TCS', name: 'Tata Consultancy Services', type: 'stock',
+                    quantity: 10, purchase_price: 3500, current_price: 3890.25,
+                    current_value: 38902.5, gain_loss: 3902.5, gain_loss_percentage: 11.15
+                },
+                {
+                    id: 2, symbol: 'RELIANCE', name: 'Reliance Industries Ltd', type: 'stock',
+                    quantity: 5, purchase_price: 2300, current_price: 2485.50,
+                    current_value: 12427.5, gain_loss: 927.5, gain_loss_percentage: 8.07
+                }
+            ];
+
+            allHoldings = mockHoldings;
+            totalItems = mockHoldings.length;
+
+            // Update UI with mock data
+            document.getElementById('totalInvested').textContent = '₹46,500';
+            document.getElementById('currentValue').textContent = '₹51,330';
+            document.getElementById('totalGainLoss').textContent = '₹4,830';
+            document.getElementById('totalReturn').textContent = '10.39%';
+            document.getElementById('activePositions').textContent = '2';
+
+            updatePortfolioTable();
+        }
+
+        function updatePortfolioTable() {
+            const container = document.getElementById('holdingsContainer');
+            const paginationContainer = document.getElementById('paginationContainer');
+            const paginationInfo = document.getElementById('paginationInfo');
+            
+            if (allHoldings.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <h3>No investments yet</h3>
+                        <p>Start by making your first investment!</p>
+                    </div>
+                `;
+                paginationContainer.style.display = 'none';
+                paginationInfo.textContent = 'No holdings';
+                return;
+            }
+
+            // Calculate pagination
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+            const paginatedHoldings = allHoldings.slice(startIndex, endIndex);
+
+            // Update pagination info
+            paginationInfo.textContent = `Showing ${startIndex + 1}-${endIndex} of ${totalItems} holdings`;
+
+            // Generate table
+            const table = `
+                <table class="holdings-table">
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                            <th>Avg. Price</th>
+                            <th>Current Price</th>
+                            <th>Investment</th>
+                            <th>Current Value</th>
+                            <th>P&L</th>
+                            <th>Return %</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${paginatedHoldings.map(holding => `
+                            <tr>
+                                <td>
+                                    <div class="asset-info">
+                                        <div class="asset-symbol">${holding.symbol}</div>
+                                        <div class="asset-name">${holding.name}</div>
+                                    </div>
+                                </td>
+                                <td><span class="asset-type ${holding.type}">${holding.type}</span></td>
+                                <td>${formatNumber(holding.quantity)}</td>
+                                <td>₹${holding.purchase_price.toFixed(2)}</td>
+                                <td>₹${holding.current_price.toFixed(2)}</td>
+                                <td>₹${formatNumber(holding.quantity * holding.purchase_price)}</td>
+                                <td>₹${formatNumber(holding.current_value)}</td>
+                                <td class="${holding.gain_loss >= 0 ? 'positive' : 'negative'}">₹${formatNumber(holding.gain_loss)}</td>
+                                <td class="${holding.gain_loss_percentage >= 0 ? 'positive' : 'negative'}">${holding.gain_loss_percentage.toFixed(2)}%</td>
+                                <td><button class="btn-sell" onclick="sellHolding(${holding.id}, '${holding.symbol}')">Sell</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = table;
+
+            // Update pagination controls
+            updatePaginationControls();
+        }
+
+        function updatePaginationControls() {
+            const paginationContainer = document.getElementById('paginationContainer');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const pageInfo = document.getElementById('pageInfo');
+
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+            if (totalPages <= 1) {
+                paginationContainer.style.display = 'none';
+                return;
+            }
+
+            paginationContainer.style.display = 'flex';
+            prevBtn.disabled = currentPage <= 1;
+            nextBtn.disabled = currentPage >= totalPages;
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+        }
+
+        function changePage(direction) {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const newPage = currentPage + direction;
+
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                updatePortfolioTable();
+            }
+        }
+
+        // Sell holding
+        async function sellHolding(id, symbol) {
+            if (!confirm(`Sell your ${symbol} investment?\n\nYou'll receive money based on current market price.`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/portfolio/sell/${id}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    const details = result.details;
+                    const profitLoss = parseFloat(details.profit_loss);
+                    const profitLossText = profitLoss >= 0 ? `Profit: ₹${formatNumber(Math.abs(profitLoss))}` : `Loss: ₹${formatNumber(Math.abs(profitLoss))}`;
+                    const profitLossEmoji = profitLoss >= 0 ? '🎉' : '📉';
+                    
+                    alert(`${profitLossEmoji} Sale Completed!\n\n` +
+                          `📊 ${details.symbol}: ${details.quantity} units\n` +
+                          `💰 Sold at: ₹${details.sell_price} per unit\n` +
+                          `📈 ${profitLossText} (${details.profit_loss_percentage}%)\n` +
+                          `💳 Received: ₹${formatNumber(details.sell_value)}\n` +
+                          `🏦 Wallet: ₹${formatNumber(details.new_wallet_balance)}`);
+                    
                     loadDashboard();
                     loadWallet();
                 } else {
-                    alert('Error: ' + result.error);
+                    alert('❌ Error: ' + result.error);
                 }
             } catch (error) {
-                alert('Error adding investment: ' + error.message);
+                // Mock sell for demonstration
+                alert('🎉 Investment sold successfully!\n\nThis is a demo - in real app this would connect to your backend.');
+                
+                // Remove from mock data
+                allHoldings = allHoldings.filter(h => h.id !== id);
+                totalItems = allHoldings.length;
+                
+                if (currentPage > Math.ceil(totalItems / itemsPerPage)) {
+                    currentPage = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+                }
+                
+                updatePortfolioTable();
             }
-        });
-    }
-
-    // Load dashboard data
-    async function loadDashboard() {
-        try {
-            const response = await fetch(`${API_BASE}/api/portfolio/summary`);
-            const data = await response.json();
-
-            // Update dashboard cards
-            document.getElementById('totalInvested').textContent = `₹${formatNumber(data.total_invested)}`;
-            document.getElementById('currentValue').textContent = `₹${formatNumber(data.current_value)}`;
-            
-            const gainLossElement = document.getElementById('totalGainLoss');
-            const returnElement = document.getElementById('totalReturn');
-            
-            gainLossElement.textContent = `₹${formatNumber(data.total_gain_loss)}`;
-            returnElement.textContent = `${data.total_gain_loss_percentage.toFixed(2)}%`;
-            
-            // Color coding for gain/loss
-            const isPositive = data.total_gain_loss >= 0;
-            gainLossElement.className = `value ${isPositive ? 'positive' : 'negative'}`;
-            returnElement.className = `value ${isPositive ? 'positive' : 'negative'}`;
-
-            // Update holdings table
-            updateHoldingsTable(data.holdings);
-            
-            // Update charts
-            updateAllCharts(data.holdings);
-
-        } catch (error) {
-            console.error('Error loading dashboard:', error);
-            document.getElementById('holdingsContainer').innerHTML = 
-                '<div class="loading">Error loading data. Please refresh the page.</div>';
-        }
-    }
-
-    // Update holdings table
-    function updateHoldingsTable(holdings) {
-        const container = document.getElementById('holdingsContainer');
-        
-        if (holdings.length === 0) {
-            container.innerHTML = '<div class="loading">No investments added yet.</div>';
-            return;
         }
 
-        const table = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>Symbol</th>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>Quantity</th>
-                        <th>Purchase Price</th>
-                        <th>Current Price</th>
-                        <th>Investment</th>
-                        <th>Current Value</th>
-                        <th>Gain/Loss</th>
-                        <th>Return %</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${holdings.map(holding => `
-                        <tr>
-                            <td><strong>${holding.symbol}</strong></td>
-                            <td>${holding.name}</td>
-                            <td><span style="background: ${holding.type === 'stock' ? '#3498db' : '#f39c12'}; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px;">${holding.type.toUpperCase()}</span></td>
-                            <td>${holding.quantity}</td>
-                            <td>₹${holding.purchase_price.toFixed(2)}</td>
-                            <td>₹${holding.current_price.toFixed(2)}</td>
-                            <td>₹${formatNumber(holding.quantity * holding.purchase_price)}</td>
-                            <td>₹${formatNumber(holding.current_value)}</td>
-                            <td class="${holding.gain_loss >= 0 ? 'positive' : 'negative'}">₹${formatNumber(holding.gain_loss)}</td>
-                            <td class="${holding.gain_loss_percentage >= 0 ? 'positive' : 'negative'}">${holding.gain_loss_percentage.toFixed(2)}%</td>
-                            <td><button class="sell-btn" onclick="sellHolding(${holding.id}, '${holding.symbol}')">💰 Sell</button></td>
-                        </tr>
+        // News functions
+        async function loadNews() {
+            try {
+                const response = await fetch(`${API_BASE}/api/news`);
+                const news = await response.json();
+                displayNews(news);
+            } catch (error) {
+                console.error('Error loading news:', error);
+                displayMockNews();
+            }
+        }
+
+        function displayNews(news) {
+            const newsContainer = document.getElementById('newsContainer');
+            
+            if (news.length === 0) {
+                newsContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📰</div><h3>No news available</h3></div>';
+                return;
+            }
+
+            const newsHTML = `
+                <div class="news-grid">
+                    ${news.slice(0, 8).map(item => `
+                        <div class="news-item">
+                            <div class="news-headline">${item.headline}</div>
+                            <div class="news-summary">${item.summary}</div>
+                            <div class="news-meta">
+                                <span class="news-source">${item.source}</span>
+                                <span class="news-time">${item.time}</span>
+                                <span class="news-category">${item.category || 'business'}</span>
+                            </div>
+                        </div>
                     `).join('')}
-                </tbody>
-            </table>
-        `;
-        
-        container.innerHTML = table;
-    }
+                </div>
+            `;
+            
+            newsContainer.innerHTML = newsHTML;
+        }
 
-    // Initialize all charts
-    function initializeCharts() {
-        // Portfolio allocation chart
-        const ctx1 = document.getElementById('allocationChart').getContext('2d');
-        allocationChart = new Chart(ctx1, {
-            type: 'doughnut',
-            data: {
-                labels: [],
-                datasets: [{
-                    data: [],
-                    backgroundColor: [
-                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-                        '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'right' },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const value = context.parsed;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return `${context.label}: ₹${formatNumber(value)} (${percentage}%)`;
-                            }
-                        }
+        function displayMockNews() {
+            const mockNews = [
+                {
+                    headline: "Sensex surges 480 points as banking stocks rally",
+                    summary: "Indian benchmark indices closed higher led by strong performance in banking and IT sectors. HDFC Bank and ICICI Bank were among top gainers.",
+                    source: "Economic Times",
+                    time: "2 hours ago",
+                    category: "markets"
+                },
+                {
+                    headline: "Reliance Industries reports record quarterly profits",
+                    summary: "RIL posted a 15% increase in net profit for Q3, driven by robust performance across retail, telecom and petrochemicals segments.",
+                    source: "Business Standard",
+                    time: "4 hours ago",
+                    category: "earnings"
+                },
+                {
+                    headline: "RBI maintains repo rate at 6.50%, adopts neutral stance",
+                    summary: "The Reserve Bank of India kept the policy rate unchanged while shifting to a neutral stance from accommodative, citing balanced growth-inflation dynamics.",
+                    source: "Mint",
+                    time: "6 hours ago",
+                    category: "policy"
+                },
+                {
+                    headline: "Foreign investors pump ₹18,500 crore into Indian equities",
+                    summary: "Strong FPI inflows continue as foreign investors show renewed confidence in India's economic recovery and growth prospects.",
+                    source: "Financial Express",
+                    time: "8 hours ago",
+                    category: "markets"
+                }
+            ];
+            
+            displayNews(mockNews);
+        }
+
+        // Chart functions
+        function initializeCharts() {
+            // Allocation Chart
+            const ctx1 = document.getElementById('allocationChart').getContext('2d');
+            charts.allocation = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['No investments yet'],
+                    datasets: [{
+                        data: [1],
+                        backgroundColor: ['#ddd']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' }
                     }
                 }
-            }
-        });
-
-        // Type distribution chart
-        const ctx2 = document.getElementById('typeChart').getContext('2d');
-        typeChart = new Chart(ctx2, {
-            type: 'pie',
-            data: {
-                labels: ['Stocks', 'Bonds'],
-                datasets: [{
-                    data: [0, 0],
-                    backgroundColor: ['#3498db', '#f39c12']
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom' }
-                }
-            }
-        });
-
-        // Stock holdings chart
-        const ctx3 = document.getElementById('stockChart').getContext('2d');
-        stockChart = new Chart(ctx3, {
-            type: 'doughnut',
-            data: {
-                labels: [],
-                datasets: [{
-                    data: [],
-                    backgroundColor: ['#3498db', '#2980b9', '#1abc9c', '#16a085', '#27ae60', '#229954']
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'right' }
-                }
-            }
-        });
-
-        // Bond holdings chart
-        const ctx4 = document.getElementById('bondChart').getContext('2d');
-        bondChart = new Chart(ctx4, {
-            type: 'doughnut',
-            data: {
-                labels: [],
-                datasets: [{
-                    data: [],
-                    backgroundColor: ['#f39c12', '#e67e22', '#d35400', '#f1c40f', '#f4d03f', '#f7dc6f']
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'right' }
-                }
-            }
-        });
-    }
-
-    // Update all charts
-    function updateAllCharts(holdings) {
-        if (holdings.length === 0) return;
-
-        // Update portfolio allocation chart
-        const labels = holdings.map(h => h.symbol);
-        const data = holdings.map(h => h.current_value);
-        
-        allocationChart.data.labels = labels;
-        allocationChart.data.datasets[0].data = data;
-        allocationChart.update();
-
-        // Update type distribution chart
-        const stocks = holdings.filter(h => h.type === 'stock');
-        const bonds = holdings.filter(h => h.type === 'bond');
-        const stockValue = stocks.reduce((sum, h) => sum + h.current_value, 0);
-        const bondValue = bonds.reduce((sum, h) => sum + h.current_value, 0);
-        
-        typeChart.data.datasets[0].data = [stockValue, bondValue];
-        typeChart.update();
-
-        // Update stock chart
-        if (stocks.length > 0) {
-            stockChart.data.labels = stocks.map(s => s.symbol);
-            stockChart.data.datasets[0].data = stocks.map(s => s.current_value);
-        } else {
-            stockChart.data.labels = ['No Stocks'];
-            stockChart.data.datasets[0].data = [1];
-        }
-        stockChart.update();
-
-        // Update bond chart
-        if (bonds.length > 0) {
-            bondChart.data.labels = bonds.map(b => b.symbol);
-            bondChart.data.datasets[0].data = bonds.map(b => b.current_value);
-        } else {
-            bondChart.data.labels = ['No Bonds'];
-            bondChart.data.datasets[0].data = [1];
-        }
-        bondChart.update();
-    }
-
-    // Sell holding (replaces delete)
-    async function sellHolding(id, symbol) {
-        if (!confirm(`Are you sure you want to sell your ${symbol} investment?\nYou'll receive money back in your wallet based on current market price.`)) return;
-
-        try {
-            const response = await fetch(`${API_BASE}/api/portfolio/sell/${id}`, {
-                method: 'POST'
             });
 
-            const result = await response.json();
-            
-            if (response.ok) {
-                const details = result.details;
-                const profitLoss = parseFloat(details.profit_loss);
-                const profitLossText = profitLoss >= 0 ? `Profit: ₹${formatNumber(Math.abs(profitLoss))}` : `Loss: ₹${formatNumber(Math.abs(profitLoss))}`;
-                const profitLossEmoji = profitLoss >= 0 ? '🎉' : '📉';
-                
-                alert(`${profitLossEmoji} Investment Sold Successfully!\n\n` +
-                      `📊 ${details.symbol}: ${details.quantity} shares\n` +
-                      `💰 Sold at: ₹${details.sell_price} per share\n` +
-                      `📈 ${profitLossText} (${details.profit_loss_percentage}%)\n` +
-                      `💳 Received: ₹${formatNumber(details.sell_value)}\n` +
-                      `🏦 New wallet balance: ₹${formatNumber(details.new_wallet_balance)}`);
-                
-                loadDashboard();
-                loadWallet();
-            } else {
-                alert('Error selling investment: ' + result.error);
+            // Type Chart
+            const ctx2 = document.getElementById('typeChart').getContext('2d');
+            charts.type = new Chart(ctx2, {
+                type: 'pie',
+                data: {
+                    labels: ['Stocks', 'Bonds'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#667eea', '#764ba2']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function initializeAnalyticsCharts() {
+            // Stock Chart
+            const ctx3 = document.getElementById('stockChart')?.getContext('2d');
+            if (ctx3) {
+                charts.stock = new Chart(ctx3, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['No stocks'],
+                        datasets: [{
+                            data: [1],
+                            backgroundColor: ['#ddd']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right' }
+                        }
+                    }
+                });
             }
-        } catch (error) {
-            alert('Error selling investment: ' + error.message);
+
+            // Bond Chart
+            const ctx4 = document.getElementById('bondChart')?.getContext('2d');
+            if (ctx4) {
+                charts.bond = new Chart(ctx4, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['No bonds'],
+                        datasets: [{
+                            data: [1],
+                            backgroundColor: ['#ddd']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right' }
+                        }
+                    }
+                });
+            }
+
+            // Performance Chart
+            const ctx5 = document.getElementById('performanceChart')?.getContext('2d');
+            if (ctx5) {
+                charts.performance = new Chart(ctx5, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Portfolio Value',
+                            data: generateMockPerformanceData(),
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+
+            // Sector Chart
+            const ctx6 = document.getElementById('sectorChart')?.getContext('2d');
+            if (ctx6) {
+                charts.sector = new Chart(ctx6, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Banking', 'IT', 'Energy', 'Auto', 'Pharma'],
+                        datasets: [{
+                            label: 'Investment (₹)',
+                            data: [30000, 25000, 20000, 15000, 10000],
+                            backgroundColor: ['#667eea', '#764ba2', '#11998e', '#38ef7d', '#f093fb']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
         }
-    }
 
-    // Format number for display
-    function formatNumber(num) {
-        return new Intl.NumberFormat('en-IN', {
-            maximumFractionDigits: 2,
-            minimumFractionDigits: 0
-        }).format(num);
-    }
+        function updateDashboardCharts(holdings) {
+            if (holdings.length === 0) return;
 
-    // Auto-refresh data every 30 seconds
-    setInterval(() => {
-        loadDashboard();
-        loadNews();
-    }, 30000);
+            // Update allocation chart
+            const labels = holdings.map(h => h.symbol);
+            const data = holdings.map(h => h.current_value);
+            
+            charts.allocation.data.labels = labels;
+            charts.allocation.data.datasets[0].data = data;
+            charts.allocation.data.datasets[0].backgroundColor = generateColors(labels.length);
+            charts.allocation.update();
 
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        const modal = document.getElementById('addMoneyModal');
-        if (event.target === modal) {
-            closeAddMoneyModal();
+            // Update type distribution chart
+            const stocks = holdings.filter(h => h.type === 'stock');
+            const bonds = holdings.filter(h => h.type === 'bond');
+            const stockValue = stocks.reduce((sum, h) => sum + h.current_value, 0);
+            const bondValue = bonds.reduce((sum, h) => sum + h.current_value, 0);
+            
+            charts.type.data.datasets[0].data = [stockValue, bondValue];
+            charts.type.update();
+
+            // Update analytics charts if they exist
+            if (charts.stock) {
+                if (stocks.length > 0) {
+                    charts.stock.data.labels = stocks.map(s => s.symbol);
+                    charts.stock.data.datasets[0].data = stocks.map(s => s.current_value);
+                    charts.stock.data.datasets[0].backgroundColor = generateColors(stocks.length);
+                } else {
+                    charts.stock.data.labels = ['No stocks'];
+                    charts.stock.data.datasets[0].data = [1];
+                    charts.stock.data.datasets[0].backgroundColor = ['#ddd'];
+                }
+                charts.stock.update();
+            }
+
+            if (charts.bond) {
+                if (bonds.length > 0) {
+                    charts.bond.data.labels = bonds.map(b => b.symbol);
+                    charts.bond.data.datasets[0].data = bonds.map(b => b.current_value);
+                    charts.bond.data.datasets[0].backgroundColor = generateColors(bonds.length);
+                } else {
+                    charts.bond.data.labels = ['No bonds'];
+                    charts.bond.data.datasets[0].data = [1];
+                    charts.bond.data.datasets[0].backgroundColor = ['#ddd'];
+                }
+                charts.bond.update();
+            }
         }
-    }
-</script>
-</body>
-</html><!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portfolio Management System</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
 
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        padding: 20px;
-    }
+        function generateColors(count) {
+            const colors = ['#667eea', '#764ba2', '#11998e', '#38ef7d', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'];
+            const result = [];
+            for (let i = 0; i < count; i++) {
+                result.push(colors[i % colors.length]);
+            }
+            return result;
+        }
 
-    .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 15px;
-        padding: 30px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-    }
+        function generateMockPerformanceData() {
+            const baseValue = 100000;
+            const data = [baseValue];
+            
+            for (let i = 1; i < 6; i++) {
+                const change = (Math.random() - 0.4) * 0.05; // Slight upward bias
+                const newValue = data[i - 1] * (1 + change);
+                data.push(Math.max(newValue, baseValue * 0.85));
+            }
+            
+            return data;
+        }
 
-    h1 {
-        text-align: center;
-        color: #333;
-        margin-bottom: 30px;
-        font-size: 2.5em;
-        font-weight: 300;
-    }
+        // Utility functions
+        function formatNumber(num) {
+            return new Intl.NumberFormat('en-IN', {
+                maximumFractionDigits: 0,
+                minimumFractionDigits: 0
+            }).format(num);
+        }
 
-    .dashboard {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-    }
+        // Auto-refresh data every 2 minutes
+        setInterval(() => {
+            loadDashboard();
+            loadNews();
+        }, 120000);
 
-    .card {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        text-align: center;
-        transition: transform 0.3s ease;
-    }
+        // Modal close on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('addMoneyModal');
+            if (event.target === modal) {
+                closeAddMoneyModal();
+            }
+        }
 
-    .card:hover {
-        transform: translateY(-5px);
-    }
-
-    .card h3 {
-        color: #666;
-        margin-bottom: 10px;
-        font-size: 0.9em;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .card .value {
-        font-size: 2em;
-        font-weight: bold;
-        color: #333;
-    }
-
-    .positive { color: #27ae60; }
-    .negative { color: #e74c3c; }
-
-    .form-section {
-        background: white;
-        padding: 25px;
-        border-radius: 10px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        margin-bottom: 30px;
-    }
-
-    .form-section h2 {
-        margin-bottom: 20px;
-        color: #333;
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin-bottom: 15px;
-    }
-
-    .form-group {
-        display: flex;
-        flex-direction: column;
-    }
-
-    label {
-        margin-bottom: 5px;
-        font-weight: 500;
-        color: #555;
-    }
-
-    input, select {
-        padding: 12px;
-        border: 2px solid #e0e0e0;
-        border-radius: 5px;
-        font-size: 16px;
-        transition: border-color 0.3s ease;
-    }
-
-    input:focus, select:focus {
-        outline: none;
-        border-color: #667eea;
-    }
-
-    button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: 12px 30px;
-        border-radius: 5px;
-        font-size: 16px;
-        cursor: pointer;
-        transition: transform 0.3s ease;
-    }
-
-    button:hover {
-        transform: translateY(-2px);
-    }
-
-    .chart-section {
-        background: white;
-        padding: 25px;
-        border-radius: 10px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        margin-bottom: 30px;
-    }
-
-    .chart-container {
-        position: relative;
-        height: 400px;
-        margin-top: 20px;
-    }
-
-    .holdings-table {
-        background: white;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    th {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 15px;
-        text-align: left;
-        font-weight: 500;
-    }
-
-    td {
-        padding: 15px;
-        border-bottom: 1px solid #eee;
-    }
-
-    tr:hover {
-        background: #f8f9fa;
-    }
-
-    .sell-btn {
-        background: #27ae60;
-        color: white;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: bold;
-    }
-
-    .sell-btn:hover {
-        background: #229954;
-        transform: translateY(-1px);
-    }
-
-    .loading {
-        text-align: center;
-        padding: 20px;
-        color: #666;
-    }
-
-    .news-item {
-        background: #f8f9fa;
-        border-left: 4px solid #667eea;
-        padding: 15px;
-        margin-bottom: 15px;
-        border-radius: 5px;
-        transition: box-shadow 0.3s ease;
-    }
-
-    .news-item:hover {
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-
-    .news-headline {
-        font-weight: bold;
-        color: #333;
-        margin-bottom: 8px;
-        font-size: 14px;
-    }
-
-    .news-summary {
-        color: #666;
-        font-size: 13px;
-        line-height: 1.4;
-        margin-bottom: 10px;
-    }
-
-    .news-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 11px;
-        color: #888;
-    }
-
-    .news-category {
-        background: #667eea;
-        color: white;
-        padding: 2px 6px;
-        border-radius: 3px;
-        text-transform: uppercase;
-        font-weight: bold;
-    }
-
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0,0,0,0.5);
-    }
-
-    .modal-content {
-        background-color: white;
-        margin: 15% auto;
-        padding: 30px;
-        border-radius: 10px;
-        width: 90%;
-        max-width: 400px;
-        text-align: center;
-    }
-
-    .close {
-        color: #aaa;
-        float: right;
-        font-size: 28px;
-        font-weight: bold;
-        cursor: pointer;
-        line-height: 1;
-        margin-top: -10px;
-    }
-
-    .close:hover {
-        color: black;
-    }
-</style>
-</head>
-<body>
-<div class="container">
-    <h1>📈 Portfolio Management System</h1>
-    
-    <!-- Dashboard Cards -->
-    <div class="dashboard" id="dashboard">
-        <div class="card">
-            <h3>Wallet Balance</h3>
-            <div class="value" id="walletBalance">₹0</div>
-            <button onclick="showAddMoneyModal()" style="margin-top: 10px; padding: 5px 10px; font-size: 12px;">Add Money</button>
-        </div>
-        <div class="card">
-            <h3>Total Invested</h3>
-            <div class="value" id="totalInvested">₹0</div>
-        </div>
-        <div class="card">
-            <h3>Current Value</h3>
-            <div class="value" id="currentValue">₹0</div>
-        </div>
-        <div class="card">
-            <h3>Total Gain/Loss</h3>
-            <div class="value" id="totalGainLoss">₹0</div>
-        </div>
-        <div class="card">
-            <h3>Total Return %</h3>
-            <div class="value" id="totalReturn">0%</div>
-        </div>
-    </div>
-
-    <!-- Add Investment Form -->
-    <div class="form-section">
-        <h2>Add New Investment</h2>
-        <form id="investmentForm">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="symbol">Symbol:</label>
-                    <input type="text" id="symbol" placeholder="e.g., RELIANCE, TCS" required>
-                </div>
-                <div class="form-group">
-                    <label for="name">Company Name:</label>
-                    <input type="text" id="name" placeholder="e.g., Reliance Industries" required>
-                </div>
-                <div class="form-group">
-                    <label for="type">Type:</label>
-                    <select id="type" required>
-                        <option value="">Select Type</option>
-                        <option value="stock">Stock</option>
-                        <option value="bond">Bond</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="quantity">Quantity:</label>
-                    <input type="number" id="quantity" min="1" required>
-                </div>
-                <div class="form-group">
-                    <label for="purchasePrice">Purchase Price (₹):</label>
-                    <input type="number" id="purchasePrice" step="0.01" min="0.01" required>
-                    <small id="priceHint" style="color: #666; font-size: 12px; margin-top: 5px;"></small>
-                </div>
-                <div class="form-group">
-                    <button type="submit">Add Investment</button>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <!-- Charts Section -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 30px;">
-        <div class="chart-section">
-            <h2>Portfolio Allocation</h2>
-            <div class="chart-container">
-                <canvas id="allocationChart"></canvas>
-            </div>
-        </div>
-        <div class="chart-section">
-            <h2>Stocks vs Bonds</h2>
-            <div class="chart-container">
-                <canvas id="typeChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 30px;">
-        <div class="chart-section">
-            <h2>Stock Holdings</h2>
-            <div class="chart-container">
-                <canvas id="stockChart"></canvas>
-            </div>
-        </div>
-        <div class="chart-section">
-            <h2>Bond Holdings</h2>
-            <div class="chart-container">
-                <canvas id="bondChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- News Section -->
-    <div class="chart-section">
-        <h2>📰 Market News</h2>
-        <div id="newsContainer" style="max-height: 400px; overflow-y: auto;">
-            <div class="loading">Loading news...</div>
-        </div>
-    </div>
-
-    <!-- Holdings Table -->
-    <div class="holdings-table">
-        <h2 style="padding: 20px; margin: 0;">Your Holdings</h2>
-        <div id="holdingsContainer">
-            <div class="loading">Loading holdings...</div>
-        </div>
-    </div>
-</div>
-
-
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            // Add loading animation
+            setTimeout(() => {
+                document.body.style.opacity = '1';
+            }, 100);
+        });
+    </script>
 </body>
 </html>

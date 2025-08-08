@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FAQs - 404 Loss Not Found</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+      color: #1f1f1f;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: #000000;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 3rem;
+    }
+
+    .logo {
+      font-size: 1.6rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    nav {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 1.05rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    nav a:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .user-avatar img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid #ffffff33;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    .user-avatar img:hover {
+      transform: scale(1.1);
+    }
+
+    footer {
+      background-color: #000000;
+      color: #ffffff;
+      padding: 1rem 2rem;
+      text-align: center;
+      font-size: 0.9rem;
+      border-top: 1px solid #e5e7eb;
+      margin-top: auto;
+    }
+
+    /* FAQ Section */
+    main {
+      padding: 4rem 2rem;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      text-align: center;
+      margin-bottom: 2rem;
+      color: #1f1f1f;
+    }
+
+    .faq {
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1.2rem;
+      border: 1px solid #ddd;
+      background-color: white;
+      transition: all 0.3s ease;
+    }
+
+    .faq-question {
+      background-color: #e0e7ff;
+      padding: 1rem 1.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      transition: background 0.3s ease;
+    }
+
+    .faq-question:hover {
+      background-color: #c7d2fe;
+    }
+
+    .faq-answer {
+      display: none;
+      padding: 1rem 1.5rem;
+      background-color: #f9fafb;
+      color: #374151;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .faq.open .faq-answer {
+      display: block;
+    }
+
+    /* Responsive tweak */
+    @media (max-width: 600px) {
+      .faq-question {
+        height: auto;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <div class="logo"> 📈Portfolio Pro</div>
+      <nav>
+        <a href="home.html">Home</a>
+        <a href="about.html">About Us</a>
+        <a href="faqs.html">FAQs</a>
+      </nav>
+    </div>
+    <div class="user-avatar">
+      <img src="https://i.pravatar.cc/32" alt="User Avatar" />
+    </div>
+  </header>
+
+  <main>
+    <h1>Frequently Asked Questions</h1>
+
+    <div class="faq">
+      <div class="faq-question">What is a portfolio?</div>
+      <div class="faq-answer">A portfolio is a collection of financial assets like stocks, bonds, mutual funds, and more that you manage together.</div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-question">How can I track my investments?</div>
+      <div class="faq-answer">Our dashboard gives a complete view of your investments, returns, and asset allocation in real-time.</div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-question">Can I buy/sell assets here?</div>
+      <div class="faq-answer">Yes In our portfolio you can even buy and sell the Stocks and see changes Real-Time.</div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-question">Is my data secure?</div>
+      <div class="faq-answer">Yes, your data is stored locally or securely in your account and not shared with third-party services.</div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-question">Can I customize my portfolio dashboard?</div>
+      <div class="faq-answer">Yes! You can personalize your asset categories, add notes, and track specific holdings you care about.</div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 404-LossNotFound. All rights reserved.
+  </footer>
+
+  <script>
+    const faqs = document.querySelectorAll('.faq');
+
+    faqs.forEach(faq => {
+      faq.querySelector('.faq-question').addEventListener('click', () => {
+        faq.classList.toggle('open');
+      });
+    });
+  </script>
+
+</body>
+</html>
